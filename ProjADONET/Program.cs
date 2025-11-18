@@ -8,33 +8,33 @@ var connection = new SqlConnection(DBConnection.GetConnectionString());
 
 #region "Insert"
 
-var pessoa = new Pessoa("Felipe", "45678901234", new DateOnly(1994, 7, 23));
+//var pessoa = new Pessoa("Felipe", "45678901234", new DateOnly(1994, 7, 23));
 
-var sqlInsertPessoa = $"INSERT INTO Pessoas (nome, cpf, dataNascimento) VALUES (@Nome, @Cpf, @DataNascimento); " +
-    $"SELECT SCOPE_IDENTITY();";
+//var sqlInsertPessoa = $"INSERT INTO Pessoas (nome, cpf, dataNascimento) VALUES (@Nome, @Cpf, @DataNascimento); " +
+//    $"SELECT SCOPE_IDENTITY();";
 
-connection.Open();
+//connection.Open();
 
-var command = new SqlCommand(sqlInsertPessoa, connection);
-command.Parameters.AddWithValue("@Nome", pessoa.Nome);
-command.Parameters.AddWithValue("@Cpf", pessoa.Cpf);
-command.Parameters.AddWithValue("@DataNascimento", pessoa.DataNascimento);
+//var command = new SqlCommand(sqlInsertPessoa, connection);
+//command.Parameters.AddWithValue("@Nome", pessoa.Nome);
+//command.Parameters.AddWithValue("@Cpf", pessoa.Cpf);
+//command.Parameters.AddWithValue("@DataNascimento", pessoa.DataNascimento);
 
-var pessoaId = Convert.ToInt32(command.ExecuteScalar());
+//var pessoaId = Convert.ToInt32(command.ExecuteScalar());
 
-var telefone = new Telefone("11", "987654321", "Celular", pessoaId);
+//var telefone = new Telefone("11", "987654321", "Celular", pessoaId);
 
-var sqlInsertTelefone = $"INSERT INTO Telefones (ddd, numero, tipo, pessoaId) VALUES (@DDD, @Numero, @Tipo, @PessoaId)";
+//var sqlInsertTelefone = $"INSERT INTO Telefones (ddd, numero, tipo, pessoaId) VALUES (@DDD, @Numero, @Tipo, @PessoaId)";
 
-command = new SqlCommand(sqlInsertTelefone, connection);
-command.Parameters.AddWithValue("@DDD", telefone.DDD);
-command.Parameters.AddWithValue("@Numero", telefone.Numero);
-command.Parameters.AddWithValue("@Tipo", telefone.Tipo);
-command.Parameters.AddWithValue("@PessoaId", telefone.PessoaId);
+//command = new SqlCommand(sqlInsertTelefone, connection);
+//command.Parameters.AddWithValue("@DDD", telefone.DDD);
+//command.Parameters.AddWithValue("@Numero", telefone.Numero);
+//command.Parameters.AddWithValue("@Tipo", telefone.Tipo);
+//command.Parameters.AddWithValue("@PessoaId", telefone.PessoaId);
 
-command.ExecuteNonQuery();
+//command.ExecuteNonQuery();
 
-connection.Close();
+//connection.Close();
 
 #endregion
 
@@ -43,7 +43,7 @@ connection.Close();
 connection.Open();
 
 var sqlSelectPessoas = "SELECT id, nome, cpf, dataNascimento FROM Pessoas";
-command = new SqlCommand(sqlSelectPessoas, connection);
+var command = new SqlCommand(sqlSelectPessoas, connection);
 var reader = command.ExecuteReader();
 
 while (reader.Read())
@@ -59,6 +59,75 @@ while (reader.Read())
 }
 reader.Close();
 connection.Close();
+
+#endregion
+
+#region "SELECT PESSOA COM TELEFONES"
+
+connection.Open();
+
+var pessoas = new List<Pessoa>();
+
+sqlSelectPessoas = "SELECT id, nome, cpf, dataNascimento FROM Pessoas";
+using (command = new SqlCommand(sqlSelectPessoas, connection))
+{
+    using (reader = command.ExecuteReader())
+    {
+        while (reader.Read())
+        {
+            var pessoaLida = new Pessoa(
+                reader.GetString(1),
+                reader.GetString(2),
+                DateOnly.FromDateTime(reader.GetDateTime(3))
+            );
+            pessoaLida.SetId(reader.GetInt32(0));
+
+            pessoas.Add(pessoaLida);
+        }
+        reader.Close();
+    }
+}
+
+foreach (var p in pessoas)
+{
+    var sqlSelectTelefones = "SELECT ddd, numero, tipo FROM Telefones WHERE pessoaId = @PessoaId";
+    using (command = new SqlCommand(sqlSelectTelefones, connection))
+    {
+        command.Parameters.AddWithValue("@PessoaId", p.Id);
+        using (reader = command.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                var telefoneLido = new Telefone(
+                    reader.GetString(0),
+                    reader.GetString(1),
+                    reader.GetString(2),
+                    p.Id
+                );
+                p.Telefones.Add(telefoneLido);
+            }
+        }
+    }
+}
+connection.Close();
+
+Console.WriteLine("========== PESSOAS COM TELEFONE ==========");
+foreach (var p in pessoas)
+{
+    if (p.Telefones.Count > 0)
+    {
+        Console.WriteLine(p);
+        Console.WriteLine($"Telefones do {p.Nome}");
+        foreach (var t in p.Telefones)
+        {
+            Console.WriteLine(t);
+        }
+    }
+    else
+        Console.WriteLine(p);
+
+    Console.WriteLine("===========================================");
+}
 
 #endregion
 

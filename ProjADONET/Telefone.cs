@@ -23,7 +23,7 @@ namespace ProjADONET
         }
 
         public override string? ToString()
-        {
+        {               
             return $"DDD: {DDD}\nNúmero: {Numero}\nTipo: {Tipo}";
         }
     }
