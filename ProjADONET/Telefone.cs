@@ -24,7 +24,7 @@ namespace ProjADONET
 
         public override string? ToString()
         {               
-            return $"DDD: {DDD}\nNúmero: {Numero}\nTipo: {Tipo}";
+            return $"Tipo: {this.Tipo} - ({this.DDD}) {this.Numero}";
         }
     }
 }
